@@ -4,4 +4,4 @@
 ### Note : If uploading a project
 - Keep it in a folder
 - name it well
-- use .gitignor to filter out unwanted files
+- use .gitignore to filter out unwanted files
