@@ -3,4 +3,4 @@
 ### Note : If uploading a project
 - Keep it in a folder
 - Name it well
-- se .gitignore to filter out unwanted files
+- Use .gitignore to filter out unwanted files
