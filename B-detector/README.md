@@ -14,7 +14,8 @@
 
 ### Dev Note
 ###### To test ESP8266 communication
-- Serial monitor, baudrate 115200, both CL&NL, command `AT`, check 5V, rx/tx connection
+- Serial monitor, baudrate 115200, both CL&NL, command `AT`, check **5V**, **rx/tx** connection
+- When flushing Uno board, disconnect ESP power first to prevent sync error
 
 ### TODOs
 - Wiring diagram memo
