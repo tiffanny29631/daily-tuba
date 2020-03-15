@@ -9,18 +9,24 @@ int buzzPin = 11;
 long duration, cm, inches;
 bool isAlarming = false;
 
-// Pin Definitions
-#define RX  2
-#define TX  3
+// 0 for starting;
+// 1 for esp comm established
+// 2 for wifi setup done
+int commStat = 0;
 
-//String wifi = "wifi";
-//String pass = "pass"
-// String awskey = "key"
+// Pin Definitions
+#define RX  4
+#define TX  2
+
 String awskey = "asdf";
 String host = "asdf";
 String path = "asdf";
 String port = "asdf";
 
+String pingCmd = "AT\r";
+String cwmodeCmd = "AT+CWMODE=2";
+String setupCmd = "AT+CWJAP=\"    \",\"    \"";
+  
 SoftwareSerial esp(RX, TX);
 
 void setup() {
@@ -31,7 +37,7 @@ void setup() {
   pinMode(greenLed, OUTPUT);
   pinMode(buzzPin, OUTPUT);
 
-  digitalWrite(greenLed, HIGH);
+  //digitalWrite(greenLed, HIGH);
   noTone(buzzPin);
 
   Serial.begin(9600);
@@ -55,14 +61,34 @@ void loop() {
 //    if (isAlarming == true) { objectCleared(); }
 //  }
 
-  if(sendCommandToESP8266("AT", 5, "OK") == true) blink();
-  //delay(1000);
+  switch(commStat) {
+    case 0:
+      if(sendCommandToESP8266(pingCmd, 3, "OK") == true) {
+        blink();
+        commStat = 1;
+      }
+      break;
+    case 1: 
+      if(sendCommandToESP8266(cwmodeCmd, 2, "OK") == true) {
+        blink();  
+        commStat = 2;
+      }
+      break;
+    case 2:
+      if(sendCommandToESP8266(setupCmd, 2, "OK") == true) {
+        blink();  
+        commStat = 3;
+      }
+      break;
+    default:
+      break;
+  }
 }
 
 void objectDetected() {
   digitalWrite(redLed, HIGH);
   digitalWrite(greenLed, LOW);
-  //tone(buzzPin, 1000);
+  tone(buzzPin, 1000);
   isAlarming = true;
 }
 void objectCleared() {
@@ -73,25 +99,24 @@ void objectCleared() {
 }
 
 void blink() {
-  objectDetected();
-  delay(500);
-  objectCleared();
+  digitalWrite(greenLed, HIGH);
+  delay(100);
+  digitalWrite(greenLed, LOW);
   }
 
 boolean sendCommandToESP8266(String command, int maxTime, char readReplay[]) {
   int countTimeCommand = 0;
-  Serial.print("Command => ");
-  Serial.print(command);
-  Serial.print(" ");
+  esp.println(command);
   while (countTimeCommand < maxTime)
   {
-    esp.println(command);
     if (esp.find(readReplay))
     {
-      Serial.print("Success");
+      Serial.print(command + " success\n");
+      delay(500);
       return true;
     }
     ++countTimeCommand;
   }
+  Serial.print(command + " fail\n");
   return false;
 }
