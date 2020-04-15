@@ -12,20 +12,22 @@ bool isAlarming = false;
 // 0 for starting;
 // 1 for esp comm established
 // 2 for wifi setup done
+// tbd
 int commStat = 0;
 
 // Pin Definitions
-#define RX  4
-#define TX  2
+#define RX  5
+#define TX  3
 
 String awskey = "asdf";
 String host = "asdf";
 String path = "asdf";
 String port = "asdf";
 
-String pingCmd = "AT\r";
-String cwmodeCmd = "AT+CWMODE=2";
 String setupCmd = "AT+CWJAP=\"    \",\"    \"";
+String pingCmd = "AT\r\n";
+String cwmodeCmd = "AT+CWMODE=1\r\n";
+String checkConnection = "AT+CIFSR\r\n";
   
 SoftwareSerial esp(RX, TX);
 
@@ -63,7 +65,7 @@ void loop() {
 
   switch(commStat) {
     case 0:
-      if(sendCommandToESP8266(pingCmd, 3, "OK") == true) {
+      if(sendCommandToESP8266(pingCmd, 5, "OK") == true) {
         blink();
         commStat = 1;
       }
@@ -75,7 +77,13 @@ void loop() {
       }
       break;
     case 2:
-      if(sendCommandToESP8266(setupCmd, 2, "OK") == true) {
+      if(sendCommandToESP8266(setupCmd, 10, "OK") == true) {
+        blink();  
+        commStat = 3;
+      }
+      break;
+    case 3: 
+      if(sendCommandToESP8266(checkConnection, 2, "192.168") == true) {
         blink();  
         commStat = 3;
       }
@@ -102,19 +110,26 @@ void blink() {
   digitalWrite(greenLed, HIGH);
   delay(100);
   digitalWrite(greenLed, LOW);
-  }
+  } 
 
 boolean sendCommandToESP8266(String command, int maxTime, char readReplay[]) {
   int countTimeCommand = 0;
-  esp.println(command);
+  esp.print(command);
   while (countTimeCommand < maxTime)
   {
     if (esp.find(readReplay))
     {
-      Serial.print(command + " success\n");
+//      int availableBytes = esp.available();
+//      for(int i = 0; i < availableBytes; ++i) {
+//        char reply = esp.read();
+//        Serial.print(reply);  
+//      }
+//      Serial.print("\n");
+      Serial.print(command + " reply success\n");
       delay(500);
       return true;
     }
+    delay(200);
     ++countTimeCommand;
   }
   Serial.print(command + " fail\n");
