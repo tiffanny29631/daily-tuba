@@ -26,13 +26,12 @@ String port = "asdf";
 
 String setupCmd = "AT+CWJAP=\"    \",\"    \"";
 String pingCmd = "AT\r\n";
-String cwmodeCmd = "AT+CWMODE=1\r\n";
+String cwmodeCmd = "AT+CWMODE=3\r\n";
 String checkConnection = "AT+CIFSR\r\n";
-  
+
 SoftwareSerial esp(RX, TX);
 
 void setup() {
-  // put your setup code here, to run once:
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
   pinMode(redLed, OUTPUT);
@@ -83,11 +82,21 @@ void loop() {
       }
       break;
     case 3: 
-      if(sendCommandToESP8266(checkConnection, 2, "192.168") == true) {
+      if(sendCommandToESP8266(checkConnection, 3, "192.168") == true) {
         blink();  
-        commStat = 3;
+        commStat = 4;
       }
       break;
+    case 4: 
+      atomicSend("AT+CIPMUX=1\r\n", 3);
+      if(!sendCommandToESP8266("AT+CIPSTART=0,\"TCP\",\"google.com\",80\r\n", 3, "CONNECT")) break;;
+      if(!sendCommandToESP8266("AT+CIPSEND=0,16\r\n", 5, "OK"))break;
+      // command to be sent has to have matched length
+      // \r or \n is considered one byte
+      //if(!sendCommandToESP8266("GET / HTTP/1.0\r\n", 20, "OK")) break;
+      atomicSend("GET / HTTP/1.0\r\n", 20);
+      commStat = 5;
+    break;
     default:
       break;
   }
@@ -112,6 +121,20 @@ void blink() {
   digitalWrite(greenLed, LOW);
   } 
 
+void atomicSend(String command, int maxTime) {
+  int count = 0;
+  esp.print(command);
+  while(count < maxTime) {
+    while (esp.available() > 0) {
+      char oneChar= esp.read();
+      Serial.print(oneChar);
+    }
+    delay(200);
+    ++count;
+  } 
+  Serial.print(command + "\n");
+}
+
 boolean sendCommandToESP8266(String command, int maxTime, char readReplay[]) {
   int countTimeCommand = 0;
   esp.print(command);
@@ -119,14 +142,8 @@ boolean sendCommandToESP8266(String command, int maxTime, char readReplay[]) {
   {
     if (esp.find(readReplay))
     {
-//      int availableBytes = esp.available();
-//      for(int i = 0; i < availableBytes; ++i) {
-//        char reply = esp.read();
-//        Serial.print(reply);  
-//      }
-//      Serial.print("\n");
-      Serial.print(command + " reply success\n");
-      delay(500);
+      Serial.print(command + " success\n");
+      delay(200);
       return true;
     }
     delay(200);
